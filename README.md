@@ -58,7 +58,7 @@ testLSP('default')
 testLSP('manual')  
 手入力設定で再生  
 ## PreMeas.m  
-測定前の振幅/SNR確認  
+測定前の振幅/SNR/SDR確認  
 #### 使用方法：  
 関数PreMeasを呼び出す。  
 imp=PreMeas('default')  

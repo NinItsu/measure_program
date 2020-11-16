@@ -1,7 +1,8 @@
 function [imp] = MeasProg_static()
 %インパルス応答を測定するプログラム(静態)
 %2020/09/25 written by Nin
-%初期設定
+%2020/11/13 Updated: SNR/SDR calculation, time/size/memory estimation. 
+%           by Nin
 FS=input('Sampling frequency: ');
 DEVICE_ID=select_play_device;
 DLY=input('ADDA Delay (2150 for 809, 2150 for Anechoic Room) : ');
@@ -35,6 +36,33 @@ meas_name=input('Measure name: ','s');
 %sound(sig.s,FS);
 %figure; spectrogram(sig.s,hamming(64),32,256,FS,'yaxis'); 
 
+noisetime=10;                                                               %暗騒音測定時間(sec)
+WRM_TIME=1;                                                                 %スピーカーウォーミングアップ時間(min)
+
+%測定時間推定(min) +-5min程度
+estimated_measuring_time=(...
+noisetime/60+WRM_TIME+...
+(sig.t+0.4)*NO_LSP+...                                                      %playrecの時間
+(15/30*NO_LSP/48*NO_MIC/2*sig.t)...                                         %CONVなどの時間
+)/60;
+fprintf('Estimated measuring time: %f min.\n',estimated_measuring_time);
+
+%インパルス応答のファイル容量推定(GB)
+estimated_file_size=...
+imp.L*NO_LSP*NO_MIC/1024/1024/1024/2*8;
+fprintf('Estimated IR file size: %f GB.\n',estimated_file_size);
+
+%生録音データのファイル容量推定(GB)
+estimated_file_size=...
+sig.L*NO_LSP*NO_MIC/1024/1024/1024/2*8;
+fprintf('Estimated RAW file size: %f GB.\n',estimated_file_size);
+
+%所要メモリ推定(GB)
+estimated_memory_required=...                                                               %RAW2IR/CONV関数の呼び出しにより2倍のメモリが必要
+(sig.L*(3+2)+imp.L)*NO_LSP*NO_MIC*8/1024/1024/1024;
+fprintf('Estimated memory required: %f GB.\n',estimated_memory_required);
+
+tic
 %ファイル名
 date=datestr(now,'yymmdd')
 s1 = strcat(meas_name,'-',sig.TYPE,num2str(sig.A),'-');
@@ -51,7 +79,7 @@ imp.s = zeros(imp.L,NO_LSP,NO_MIC);
 
 %暗騒音測定 (10秒間)
 fprintf('Measuring background noise...\n');
-noise = recs(NO_MIC,10*FS,FS,DEVICE_ID);
+noise = recs(NO_MIC,noisetime*FS,FS,DEVICE_ID);
 fprintf('Done.\n');
 fprintf('Saving noise data...');
 %For old version MATLAB
@@ -68,14 +96,20 @@ fprintf('Done.\n');
 
 %Warming Up
 if strcmp(WARM_UP,'ON')
-    WN = randn(10*60*FS,1); %10分間ホワイトノイズ
+    WN = randn(WRM_TIME*60*FS,1); %10分間ホワイトノイズ
     WN = (WN/max(WN))*sig.A;
     WN = WN*ones(1,NO_LSP);
     fprintf('Loudspeaker warming up(10 minutes)...\n')
     plays(WN,NO_LSP,FS,DEVICE_ID);
     fprintf('Done.\n');
 end
-    
+WN=0;
+
+SNR=zeros(NO_LSP,NO_MIC);
+SDR=zeros(NO_LSP,NO_MIC);
+noise=CONV(noise,sig.inv);
+noise=noise(sig.L+1:noisetime*FS,:);
+
 %測定
 fprintf('Measuring...');
 for idx_LSP = 1:NO_LSP
@@ -86,6 +120,7 @@ fprintf('Done.\n');
 
 %インパルス応答算出
 imp = RAW2IR(imp,sig,DLY);
+imp.d = imp.full(sig.L+1:sig.L+DLY-1,:,:);
 
 %    figure; plot(imp.raw(:,1,1)); %録音信号の確認
 %    figure; plot(imp.s(:,1,1)); %水平面インパルス応答の確認
@@ -94,28 +129,25 @@ imp = RAW2IR(imp,sig,DLY);
 %    figure; semilogx(20*log10(abs(s_fft(1:FS/2))));
 %    figure; spectrogram(imp.s(:,1,1),hamming(64),32,256,FS,'yaxis'); %スペクトログラムの確認
 %全てのインパルス応答の確認
-f1=figure(1);
-%    MIC_chk=[1 7 13 19 22 28 36];
-set(f1,'position',get(0,'screensize'));
-for idx_LSP = 1:NO_LSP
-   for idx_MIC = 1:NO_MIC
-       subplot(NO_MIC,NO_LSP,idx_LSP+(idx_MIC-1)*NO_LSP,'replace');
-       plot(imp.s(:,idx_LSP,idx_MIC));
-   end
-end 
-drawnow;
+% f1=figure(1);
+% %    MIC_chk=[1 7 13 19 22 28 36];
+% set(f1,'position',get(0,'screensize'));
+% for idx_LSP = 1:NO_LSP
+%    for idx_MIC = 1:NO_MIC
+%        subplot(NO_MIC,NO_LSP,idx_LSP+(idx_MIC-1)*NO_LSP,'replace');
+%        plot(imp.s(:,idx_LSP,idx_MIC));
+%    end
+% end 
+% drawnow;
     
-%SNRの確認（偽）
+%SNR/SDRの確認
 for idx_LSP=1:NO_LSP
    for idx_MIC=1:NO_MIC
-       P=abs(max(imp.s(:,idx_LSP,idx_MIC)).^2);
        S=abs(sum(imp.s(:,idx_LSP,idx_MIC).^2)/imp.L);
-%        N=abs(sum(noise(:,idx_MIC).^2)/FS/10);
-       N=abs(sum(impnoise(:,idx_LSP,idx_MIC).^2)/(DLY-1));
-%            N=abs(sum(imp.full(imp.L/2+1:end,idx_LSP,idx_MIC).^2)/imp.L*2);
-%            N=abs(max(imp.s(imp.L/2+1:end,idx_LSP,idx_MIC)).^2);
-       PNR(idx_LSP,idx_MIC)=10*log10(P/N);
+       N=abs(sum(noise(:,idx_MIC).^2)/(noisetime*FS-sig.L));
+       D=abs(sum(imp.d(:,idx_LSP,idx_MIC).^2)/(DLY-1));
        SNR(idx_LSP,idx_MIC)=10*log10(S/N);
+       SDR(idx_LSP,idx_MIC)=10*log10(S/D);
        if SNR(idx_LSP,idx_MIC)<=20
            warning('Low SNR at LSP%d MIC%d.',idx_LSP,idx_MIC);
            figure; plot(imp.s(:,idx_LSP,idx_MIC)); 
@@ -123,10 +155,20 @@ for idx_LSP=1:NO_LSP
                ' SNR: ',num2str(SNR(idx_LSP,idx_MIC)),' dB.']);
            drawnow;
        end
+       if SDR(idx_LSP,idx_MIC)<=20
+           warning('Low SDR at LSP%d MIC%d.',idx_LSP,idx_MIC);
+           figure; plot(imp.s(:,idx_LSP,idx_MIC)); 
+           title(['LSP: ',num2str(idx_LSP),' MIC: ',num2str(idx_MIC),...
+               ' SDR: ',num2str(SDR(idx_LSP,idx_MIC)),' dB.']);
+           drawnow;
+       end
    end
 end
-maxSNR=max(max(SNR))
-minSNR=min(min(SNR))
+% maxSNR=max(max(SNR))
+minSNR=min(min(SNR));
+% maxSDR=max(max(SDR))
+minSDR=min(min(SDR));
+fprintf('Minimum SNR: %f dB; Minimum SDR: %f dB.\n',minSNR,minSDR);
 
 
 fprintf('Saving data...');
@@ -146,5 +188,8 @@ end
 filename_imp = strcat('IR\',ss,s5,'.float');
 writebin(imp.s,filename_imp,'float');
 fprintf('Done.\n');
+DUR=toc;
+fprintf('Finished.\n');
+fprintf('Duration of the measurement: %f min.\n',DUR/60);
 end
     

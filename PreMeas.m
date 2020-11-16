@@ -1,16 +1,18 @@
 function imp = PreMeas(setting)
 %測定用信号を確認するプログラム(関数)
 %2020/01/27 written by Nin
+%2020/11/13 Updated: SNR/SDR calculation, high order distortion calculation. 
+%           by Nin
 %初期設定
 switch setting
     case 'default'
         FS=48000; %サンプリング周波数
         DEVICE_ID=102; %デバイスID
         DLY=2150; %機器の遅延数 809:2150; 無響室:2150
-        NO_MIC=1; %マイク数
+        NO_MIC=48; %マイク数
         NO_LSP=1; %スピーカ数
         imp.L=2400; %インパルス応答長(サンプル数)
-        sig.TYPE='TSP'; %測定用信号の種類（TSP=UPTSP/DWTSP/LogSS）
+        sig.TYPE='LogSS'; %測定用信号の種類（TSP=UPTSP/DWTSP/LogSS）
         sig.A=0.1; %測定用信号の振幅
         sig.t=2; %測定用信号の長さ（秒）
         sig.L=sig.t*FS; %測定用信号の長さ（サンプル数）
@@ -40,7 +42,8 @@ imp.s = zeros(imp.L,NO_LSP,NO_MIC);
 
 %暗騒音測定 (10秒間)
 fprintf('Measuring background noise...\n');
-noise = recs(NO_MIC,10*FS,FS,DEVICE_ID);
+noisetime=10;
+noise = recs(NO_MIC,noisetime*FS,FS,DEVICE_ID);
 fprintf('Done.\n');
 
 %測定
@@ -61,24 +64,61 @@ fprintf('Calculating convolution...');
 %    end
 imp.full=CONV(imp.raw,sig.inv);
 fprintf('Done.\n');
-
 %機器の遅延を取り除いたインパルス応答長
 imp.s = imp.full(sig.L+DLY:sig.L+DLY+imp.L-1,:,:);
-impnoise = imp.full(sig.L+1:sig.L+DLY-1,:,:);
+imp.d = imp.full(sig.L+1:sig.L+DLY-1,:,:);
+if strcmp(sig.TYPE,'LogSS')
+    [peak.v,peak.i]=max(abs(imp.full),[],1);
+    for idx_MIC=1:NO_MIC
+        for idx_LSP=1:NO_LSP
+            imp.d2(:,idx_LSP,idx_MIC) = imp.full(...
+        peak.i(1,idx_LSP,idx_MIC)-floor(sig.L/2*log(2)/log(sig.L/2))-600:...
+        peak.i(1,idx_LSP,idx_MIC)-1200,idx_LSP,idx_MIC);
+            imp.d3(:,idx_LSP,idx_MIC) = imp.full(...
+        peak.i(1,idx_LSP,idx_MIC)-floor(sig.L/2*log(3)/log(sig.L/2))-300:...
+        peak.i(1,idx_LSP,idx_MIC)-floor(sig.L/2*log(2)/log(sig.L/2))...
+        -600,idx_LSP,idx_MIC);
+            imp.d4(:,idx_LSP,idx_MIC) = imp.full(...
+        peak.i(1,idx_LSP,idx_MIC)-floor(sig.L/2*log(4)/log(sig.L/2))-150:...
+        peak.i(1,idx_LSP,idx_MIC)-floor(sig.L/2*log(3)/log(sig.L/2))...
+        -300,idx_LSP,idx_MIC);
+        end
+    end
+end
+noise=CONV(noise,sig.inv);
+noise=noise(sig.L+1:noisetime*FS,:);
 
-
+%idx_MIC番目マイク信号確認
+idx_MIC=24;
 %録音信号の確認
-figure; subplot(2,2,1); plot(imp.raw(:,1,1)); 
+f1=figure(1);
+set(f1,'position',get(0,'screensize'));
+subplot(2,2,1); plot(imp.raw(:,1,idx_MIC)); 
 %インパルス応答の確認
-subplot(2,2,2); plot(imp.s(:,1,1)); 
+subplot(2,2,2); plot(imp.s(:,1,idx_MIC)); 
 %周波数特性の確認
-s_fft=fft(squeeze(imp.s(:,1,1)),FS);
+s_fft=fft(squeeze(imp.s(:,1,idx_MIC)),FS);
 %暗騒音の周波数特性
-noise_fft=fft(noise(:,1),FS);
-subplot(2,2,3); semilogx(20*log10(abs(s_fft(1:FS/2))));
-hold on; semilogx(20*log10(abs(noise_fft(1:FS/2)))); hold off;
+noise_fft=fft(noise(:,idx_MIC),FS);
+distortion_fft=fft(imp.d(:,1,idx_MIC),FS);
+subplot(2,2,3); semilogx(20*log10(abs(s_fft(1:FS/2))));xlim([20 20000]);grid minor;
+hold on; semilogx(20*log10(abs(noise_fft(1:FS/2)))); 
+if strcmp(sig.TYPE,'LogSS')
+    distortion2_fft=fft(imp.d2(:,1,idx_MIC),FS);
+    semilogx((1:FS/2)/2,20*log10(abs(distortion2_fft(1:FS/2))));
+    distortion3_fft=fft(imp.d3(:,1,idx_MIC),FS);
+    semilogx((1:FS/2)/3,20*log10(abs(distortion3_fft(1:FS/2))));
+    distortion4_fft=fft(imp.d4(:,1,idx_MIC),FS);
+    semilogx((1:FS/2)/4,20*log10(abs(distortion4_fft(1:FS/2))));
+    legend('IR','BGN','2nd DST','3rd DST','4th DST','Location','southeast');hold off;
+else
+    semilogx(20*log10(abs(distortion_fft(1:FS/2))));
+    legend('IR','BGN','DST','Location','southeast');hold off;
+end
 %スペクトログラムの確認
-subplot(2,2,4); spectrogram(imp.s(:,1,1),hamming(64),32,256,FS,'yaxis'); 
+subplot(2,2,4); spectrogram(imp.full(:,1,idx_MIC),hamming(64),32,256,FS,'yaxis'); 
+% %非線形歪みの確認
+% figure(3);spectrogram(imp.full(:,1,idx_MIC),hamming(64),32,256,FS,'yaxis');
 
 %全てのインパルス応答の確認
 f1=figure(2);
@@ -93,13 +133,10 @@ end
 %SNRの確認（偽）
 for idx_LSP=1:NO_LSP
    for idx_MIC=1:NO_MIC
-       P=abs(max(imp.s(:,idx_LSP,idx_MIC)).^2);
        S=abs(sum(imp.s(:,idx_LSP,idx_MIC).^2)/imp.L);
-%        N=abs(sum(noise(:,idx_MIC).^2)/FS/10);
-       N=abs(sum(impnoise(:,idx_LSP,idx_MIC).^2)/(DLY-1));
-%            N=abs(sum(imp.full(imp.L/2+1:end,idx_LSP,idx_MIC).^2)/imp.L*2);
-%            N=abs(max(imp.s(imp.L/2+1:end,idx_LSP,idx_MIC)).^2);
-       PNR(idx_LSP,idx_MIC)=10*log10(P/N);
+       N=abs(sum(noise(:,idx_MIC).^2)/(noisetime*FS-sig.L));
+       D=abs(sum(imp.d(:,idx_LSP,idx_MIC).^2)/(DLY-1));
+       SDR(idx_LSP,idx_MIC)=10*log10(S/D);
        SNR(idx_LSP,idx_MIC)=10*log10(S/N);
        if SNR(idx_LSP,idx_MIC)<=20
            warning('Low SNR at LSP%d MIC%d.',idx_LSP,idx_MIC);
@@ -108,9 +145,19 @@ for idx_LSP=1:NO_LSP
                ' SNR: ',num2str(SNR(idx_LSP,idx_MIC)),' dB.']);
            drawnow;
        end
+       if SDR(idx_LSP,idx_MIC)<=20
+           warning('Low SDR at LSP%d MIC%d.',idx_LSP,idx_MIC);
+           figure; plot(imp.s(:,idx_LSP,idx_MIC)); 
+           title(['LSP: ',num2str(idx_LSP),' MIC: ',num2str(idx_MIC),...
+               ' SDR: ',num2str(SDR(idx_LSP,idx_MIC)),' dB.']);
+           drawnow;
+       end
    end
 end
-maxSNR=max(max(SNR))
-minSNR=min(min(SNR))
-
+maxSNR=max(max(SNR));
+minSNR=min(min(SNR));
+fprintf('Minimum SNR: %f dB; Maximum SNR: %f dB.\n',minSNR,maxSNR);
+maxSDR=max(max(SDR));
+minSDR=min(min(SDR));
+fprintf('Minimum SDR: %f dB; Maximum SDR: %f dB.\n',minSDR,maxSDR);
 end

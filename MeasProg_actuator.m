@@ -1,7 +1,8 @@
 function [imp] = MeasProg_actuator()
 %インパルス応答を測定するプログラム(音場測定装置)
 %2020/09/29 written by Nin
-%初期設定
+%2020/11/13 Updated: SNR/SDR calculation, time/size/memory estimation. 
+%           by Nin
 FS=input('Sampling frequency: ');
 DEVICE_ID=select_play_device;
 DLY=input('ADDA Delay (2150 for 809, 2150 for Anechoic Room) : ');
@@ -47,6 +48,35 @@ meas_name=input('Measure name: ','s');
 %sound(sig.s,FS);
 %figure; spectrogram(sig.s,hamming(64),32,256,FS,'yaxis'); 
 
+noisetime=10;                                                               %暗騒音測定時間(sec)
+WRM_TIME=1;                                                                 %スピーカーウォーミングアップ時間(min)
+
+%測定時間推定(min) +-5min程度
+estimated_measuring_time=(...
+noisetime/60+WRM_TIME+...
+act.MAX_X+act.MAX_Z*(act.MAX_X-act.MIN_X)/act.INR_X+...　　　　　　　　　　　　　　　　　　　　　
+(act.MAX_X-act.MIN_X)/act.INR_X*(1+(act.MAX_Z-act.MIN_Z)/act.INR_Z)*3+...　　　　　　　　　　　%ACT_MOVEの時間
+(act.MAX_X+act.MAX_Z*(act.MAX_X-act.MIN_X)/act.INR_X)/5+...
+(1+(act.MAX_X-act.MIN_X)/act.INR_X)*5+...                                                    %ACT_RETURNの時間
+(sig.t+0.4)*NO_LSP*((act.MAX_X-act.MIN_X)/act.INR_X+1)*...
+((act.MAX_Z-act.MIN_Z)/act.INR_Z+1)+...                                                      %playrecの時間
+((act.MAX_X-act.MIN_X)/act.INR_X+1)*((act.MAX_Z-act.MIN_Z)...
+/act.INR_Z+1)*(15/30*NO_LSP/48*NO_MIC/2*sig.t)...                                               %CONVなどの時間
+)/60;
+fprintf('Estimated measuring time: %f min.\n',estimated_measuring_time);
+
+%ファイル容量推定(GB)
+estimated_file_size=...
+imp.L*NO_LSP*NO_MIC*((act.MAX_X-act.MIN_X)/act.INR_X+1)*((act.MAX_Z-act.MIN_Z)...
+/act.INR_Z+1)/1024/1024/1024/2*8;
+fprintf('Estimated file size: %f GB.\n',estimated_file_size);
+
+%所要メモリ推定(GB)
+estimated_memory_required=...                                                               %RAW2IR/CONV関数の呼び出しにより2倍のメモリが必要
+(sig.L*(3*2+2*2)+imp.L*2)*NO_LSP*NO_MIC*8/1024/1024/1024;
+fprintf('Estimated memory required: %f GB.\n',estimated_memory_required);
+
+tic
 %ファイル名
 date=datestr(now,'yymmdd')
 s1 = strcat(meas_name,'-',sig.TYPE,num2str(sig.A),'-');
@@ -58,7 +88,7 @@ ss = strcat(s1,s2,s3,s4);
 
 %配列の初期化
 imp.raw = zeros(sig.L,NO_LSP,NO_MIC);
-imp.full = zeros(sig.L*2-1,NO_LSP,NO_MIC);
+imp.full = zeros(sig.L*2,NO_LSP,NO_MIC);
 imp.s = zeros(imp.L,NO_LSP,NO_MIC);
 
 %装置初期設定
@@ -74,7 +104,7 @@ ACT_MOVE(act.port,2,act.MIN_Z);
 
 %暗騒音測定 (10秒間)
 fprintf('Measuring background noise...\n');
-noise = recs(NO_MIC,1*FS,FS,DEVICE_ID);
+noise = recs(NO_MIC,noisetime*FS,FS,DEVICE_ID);
 fprintf('Done.\n');
 fprintf('Saving noise data...');
 %For old version MATLAB
@@ -91,24 +121,27 @@ fprintf('Done.\n');
 
 %Warming Up
 if strcmp(WARM_UP,'ON')
-    WN = randn(60*FS,1); %10分間ホワイトノイズ
+    WN = randn(WRM_TIME*60*FS,1); %10分間ホワイトノイズ
     WN = (WN/max(WN))*sig.A;
     WN = WN*ones(1,NO_LSP);
-    fprintf('Loudspeaker warming up(10 minutes)...\n')
+    fprintf('Loudspeaker warming up(10 minutes)...\n');
     plays(WN,NO_LSP,FS,DEVICE_ID);
     fprintf('Done.\n');
 end
+WN=0;
 
 imp.raw=zeros(sig.L,NO_LSP,NO_MIC);
 imp.s=zeros(imp.L,NO_LSP,NO_MIC);
 imp.full=zeros(sig.L*2,NO_LSP,NO_MIC);
-impnoise=zeros(DLY-1,NO_LSP,NO_MIC);
+imp.d=zeros(DLY-1,NO_LSP,NO_MIC);
 SNR=zeros(NO_LSP,NO_MIC);
-tic
+SDR=zeros(NO_LSP,NO_MIC);
+noise=CONV(noise,sig.inv);
+noise=noise(sig.L+1:noisetime*FS,:);
 
 for x_pos = act.MIN_X:act.INR_X:act.MAX_X
 for z_pos = act.MIN_Z:act.INR_Z:act.MAX_Z
-    
+
     %測定
     fprintf('Measuring...');
     for idx_LSP = 1:NO_LSP
@@ -119,7 +152,7 @@ for z_pos = act.MIN_Z:act.INR_Z:act.MAX_Z
 
     %インパルス応答算出
     imp = RAW2IR(imp,sig,DLY);
-    impnoise = imp.full(sig.L+1:sig.L+DLY-1,:,:);
+    imp.d = imp.full(sig.L+1:sig.L+DLY-1,:,:);
     
 %    figure; plot(imp.raw(:,1,1)); %録音信号の確認
 %    figure; plot(imp.s(:,1,1)); %水平面インパルス応答の確認
@@ -139,17 +172,14 @@ for z_pos = act.MIN_Z:act.INR_Z:act.MAX_Z
 %    end 
 %    drawnow;
     
-    %SNRの確認（偽）
+    %SNR/SDRの確認
    for idx_LSP=1:NO_LSP
        for idx_MIC=1:NO_MIC
-%            P=abs(max(imp.s(:,idx_LSP,idx_MIC)).^2);
            S=abs(sum(imp.s(:,idx_LSP,idx_MIC).^2)/imp.L);
-%            N=abs(sum(noise(:,idx_MIC).^2)/FS/10);
-           N=abs(sum(impnoise(:,idx_LSP,idx_MIC).^2)/(DLY-1));
-%            N=abs(sum(imp.full(imp.L/2+1:end,idx_LSP,idx_MIC).^2)/imp.L*2);
-%            N=abs(max(imp.s(imp.L/2+1:end,idx_LSP,idx_MIC)).^2);
-%            PNR(idx_LSP,idx_MIC)=10*log10(P/N);
+           N=abs(sum(noise(:,idx_MIC).^2)/(noisetime*FS-sig.L));
+           D=abs(sum(imp.d(:,idx_LSP,idx_MIC).^2)/(DLY-1));
            SNR(idx_LSP,idx_MIC)=10*log10(S/N);
+           SDR(idx_LSP,idx_MIC)=10*log10(S/D);
            if SNR(idx_LSP,idx_MIC)<=20
                warning('Low SNR at LSP%d MIC%d.',idx_LSP,idx_MIC);
                figure; plot(imp.s(:,idx_LSP,idx_MIC)); 
@@ -157,10 +187,20 @@ for z_pos = act.MIN_Z:act.INR_Z:act.MAX_Z
                    ' SNR: ',num2str(SNR(idx_LSP,idx_MIC)),' dB.']);
                drawnow;
            end
+           if SDR(idx_LSP,idx_MIC)<=20
+               warning('Low SDR at LSP%d MIC%d.',idx_LSP,idx_MIC);
+               figure; plot(imp.s(:,idx_LSP,idx_MIC)); 
+               title(['LSP: ',num2str(idx_LSP),' MIC: ',num2str(idx_MIC),...
+                   ' SDR: ',num2str(SDR(idx_LSP,idx_MIC)),' dB.']);
+               drawnow;
+           end
        end
    end
-   maxSNR=max(max(SNR))
-   minSNR=min(min(SNR))
+%    maxSNR=max(max(SNR))
+   minSNR=min(min(SNR));
+%    maxSDR=max(max(SDR))
+   minSDR=min(min(SDR));
+   fprintf('Minimum SNR: %f dB; Minimum SDR: %f dB.\n',minSNR,minSDR);
     
     fprintf('Saving data...X: %f cm, Z: %f cm.\n',x_pos,z_pos);
     s5=strcat('_X_',num2str(x_pos),'_Z_',num2str(z_pos));
@@ -189,7 +229,7 @@ for z_pos = act.MIN_Z:act.INR_Z:act.MAX_Z
     imp.raw=zeros(sig.L,NO_LSP,NO_MIC);
     imp.s=zeros(imp.L,NO_LSP,NO_MIC);
     imp.full=zeros(sig.L*2,NO_LSP,NO_MIC);
-    impnoise=zeros(DLY-1,NO_LSP,NO_MIC);
+    imp.d=zeros(DLY-1,NO_LSP,NO_MIC);
 end
     if x_pos >= act.MAX_X
         break;
