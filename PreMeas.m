@@ -3,6 +3,8 @@ function imp = PreMeas(setting)
 %2020/01/27 written by Nin
 %2020/11/13 Updated: SNR/SDR calculation, high order distortion calculation. 
 %           by Nin
+%2021/11/02 Updated: Bandpass Log SS.
+%           by Nin
 %初期設定
 switch setting
     case 'default'
@@ -24,8 +26,12 @@ switch setting
         NO_LSP=input('No. of loudspeakers: ');
         NO_MIC=input('No. of microphones: ');
         imp.L=input('Length of the IR: ');
-        sig.TYPE=input('Signal type (TSP=UPTSP/DWTSP/LogSS) : ','s');
-        if (~strcmp(sig.TYPE,'TSP'))&&(~strcmp(sig.TYPE,'UPTSP'))&(~strcmp(sig.TYPE,'DWTSP'))&&(~strcmp(sig.TYPE,'LogSS'))
+        sig.TYPE=input('Signal type (TSP=UPTSP/DWTSP/LogSS/BPLogSS) : ','s');
+        if (strcmp(sig.TYPE,'BPLogSS'))
+            sig.fmin=input('High pass frequency: ');
+            sig.fmax=input('Low pass frequency: ');
+        end
+        if ((~strcmp(sig.TYPE,'TSP'))&&(~strcmp(sig.TYPE,'UPTSP'))&&(~strcmp(sig.TYPE,'DWTSP'))&&(~strcmp(sig.TYPE,'LogSS'))&&(~strcmp(sig.TYPE,'BPLogSS')))
             warning('Unknown command, use default TSP.\n');
             sig.TYPE='TSP';
         end
@@ -67,7 +73,7 @@ fprintf('Done.\n');
 %機器の遅延を取り除いたインパルス応答長
 imp.s = imp.full(sig.L+DLY:sig.L+DLY+imp.L-1,:,:);
 imp.d = imp.full(sig.L+1:sig.L+DLY-1,:,:);
-if strcmp(sig.TYPE,'LogSS')
+if (strcmp(sig.TYPE,'LogSS'))
     [peak.v,peak.i]=max(abs(imp.full),[],1);
     for idx_MIC=1:NO_MIC
         for idx_LSP=1:NO_LSP
@@ -85,11 +91,29 @@ if strcmp(sig.TYPE,'LogSS')
         end
     end
 end
+if (strcmp(sig.TYPE,'BPLogSS'))
+    [peak.v,peak.i]=max(abs(imp.full),[],1);
+    for idx_MIC=1:NO_MIC
+        for idx_LSP=1:NO_LSP
+            imp.d2(:,idx_LSP,idx_MIC) = imp.full(...
+        peak.i(1,idx_LSP,idx_MIC)-floor(sig.L/2*log(2)/log(sig.fmax/sig.fmin))-600:...
+        peak.i(1,idx_LSP,idx_MIC)-1200,idx_LSP,idx_MIC);
+            imp.d3(:,idx_LSP,idx_MIC) = imp.full(...
+        peak.i(1,idx_LSP,idx_MIC)-floor(sig.L/2*log(3)/log(sig.fmax/sig.fmin))-300:...
+        peak.i(1,idx_LSP,idx_MIC)-floor(sig.L/2*log(2)/log(sig.fmax/sig.fmin))...
+        -600,idx_LSP,idx_MIC);
+            imp.d4(:,idx_LSP,idx_MIC) = imp.full(...
+        peak.i(1,idx_LSP,idx_MIC)-floor(sig.L/2*log(4)/log(sig.fmax/sig.fmin))-150:...
+        peak.i(1,idx_LSP,idx_MIC)-floor(sig.L/2*log(3)/log(sig.fmax/sig.fmin))...
+        -300,idx_LSP,idx_MIC);
+        end
+    end
+end
 noise=CONV(noise,sig.inv);
 noise=noise(sig.L+1:noisetime*FS,:);
 
 %idx_MIC番目マイク信号確認
-idx_MIC=24;
+idx_MIC=1;
 %録音信号の確認
 f1=figure(1);
 set(f1,'position',get(0,'screensize'));
@@ -103,7 +127,7 @@ noise_fft=fft(noise(:,idx_MIC),FS);
 distortion_fft=fft(imp.d(:,1,idx_MIC),FS);
 subplot(2,2,3); semilogx(20*log10(abs(s_fft(1:FS/2))));xlim([20 20000]);grid minor;
 hold on; semilogx(20*log10(abs(noise_fft(1:FS/2)))); 
-if strcmp(sig.TYPE,'LogSS')
+if (strcmp(sig.TYPE,'LogSS')||strcmp(sig.TYPE,'BPLogSS'))
     distortion2_fft=fft(imp.d2(:,1,idx_MIC),FS);
     semilogx((1:FS/2)/2,20*log10(abs(distortion2_fft(1:FS/2))));
     distortion3_fft=fft(imp.d3(:,1,idx_MIC),FS);

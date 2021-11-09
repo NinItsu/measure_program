@@ -1,6 +1,8 @@
 function [imp] = MeasProg(setting)
 %インパルス応答を測定するプログラム(関数)
 %2020/01/20 written by Nin
+%2021/11/02 Updated: Bandpass Log SS.
+%           by Nin
 %初期設定
 switch setting
     case 'default'
@@ -14,7 +16,7 @@ switch setting
         rot.STAT='OFF'; %回転台の使用
         rot.INR=5; %回転角度 （2.5/5/10）
         imp.L=2400; %インパルス応答長(サンプル数)
-        sig.TYPE='TSP'; %測定用信号の種類（TSP=UPTSP/DWTSP/LogSS）
+        sig.TYPE='TSP'; %測定用信号の種類（TSP=UPTSP/DWTSP/LogSS/BPLogSS）
         sig.A=0.1; %測定用信号の振幅
         sig.t=2; %測定用信号の長さ（秒）
         sig.L=sig.t*FS; %測定用信号の長さ（サンプル数）
@@ -49,8 +51,12 @@ switch setting
             rot.INR=5;
         end
         imp.L=input('Length of the IR: ');
-        sig.TYPE=input('Signal type (TSP=UPTSP/DWTSP/LogSS) : ','s');
-        if (~strcmp(sig.TYPE,'TSP'))&&(~strcmp(sig.TYPE,'UPTSP'))&&(~strcmp(sig.TYPE,'DWTSP'))&&(~strcmp(sig.TYPE,'LogSS'))
+        sig.TYPE=input('Signal type (TSP=UPTSP/DWTSP/LogSS/BPLogSS) : ','s');
+        if (strcmp(sig.TYPE,'BPLogSS'))
+            sig.fmin=input('High pass frequency: ');
+            sig.fmax=input('Low pass frequency: ');
+        end
+        if ((~strcmp(sig.TYPE,'TSP'))&&(~strcmp(sig.TYPE,'UPTSP'))&&(~strcmp(sig.TYPE,'DWTSP'))&&(~strcmp(sig.TYPE,'LogSS'))&&(~strcmp(sig.TYPE,'BPLogSS')))
             warning('Unknown command, use default TSP.\n');
             sig.TYPE='TSP';
         end
@@ -58,7 +64,6 @@ switch setting
         sig.t=input('Signal length (in sec) : ');
         sig.L=sig.t*FS;
         [sig.s sig.inv]=meas_sig_gen(sig,FS);
-        meas_name=input('Measure name: ','s');
 end
 
 %測定用信号の確認

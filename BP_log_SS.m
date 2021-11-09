@@ -20,9 +20,10 @@ s(N/2+2:N)=conj(s(N/2:-1:2));
 inv=1./s;
 s=real(ifft(s));
 inv=real(ifft(inv));
-
 %‰~óƒVƒtƒg
 s = circshift(s,[0,(N-J)/2]); 
 inv = circshift(inv,[0,-(N-J)/2]); 
 
+s = bandpass(s,[fmin fmax],FS,'ImpulseResponse','fir');
+inv = bandpass(inv,[fmin fmax],FS,'ImpulseResponse','fir');
 end

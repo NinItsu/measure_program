@@ -1,4 +1,4 @@
-function retvec = readbin(filename, precision);
+function retvec = readbin(filename, precision)
 % "Binary data upload" by S.S.
 %  retvec = readbin(filename, precision);
 %

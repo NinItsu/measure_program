@@ -8,7 +8,7 @@ function imp=readIR()
     NO_LSP = str2double(PARAM{4});
     NO_MIC = str2double(PARAM{6});
     if length(PARAM)==7 && length(filename)==1
-        imp.s = readbin(strcat('IR\',filename(i).name),'float');
+        imp.s = readbin(strcat('IR\',filename(1).name),'float');
         imp.s = reshape(imp.s,imp.L,NO_LSP,NO_MIC);
     elseif length(PARAM)==9
         for i=1:length(filename)

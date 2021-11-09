@@ -59,7 +59,7 @@ elseif nargin==3
             u=[zeros(sz.v(1),sz.alt) ; u];
             v=reshape(v,sz.v(1),[]);
             v(sz.v(1)+sz.u(1),1)=0;
-            for idx=1:sz.alt;
+            for idx=1:sz.alt
                 U=fft(u(:,idx),sz.v(1)+sz.u(1),1);
                 if FLG
                     V=fft(v,sz.v(1)+sz.u(1),1);
@@ -87,7 +87,7 @@ elseif nargin==3
             u=[zeros(sz.v(1),sz.alt) ; u];
             v=reshape(v,sz.v(1),[]);
             v(sz.v(1)+sz.u(1),1)=0;
-            parfor idx=1:sz.alt;
+            parfor idx=1:sz.alt
                 U=fft(u(:,idx),sz.v(1)+sz.u(1),1);
                 if FLG
                     V=fft(v,sz.v(1)+sz.u(1),1);

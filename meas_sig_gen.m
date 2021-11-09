@@ -20,6 +20,10 @@ switch sig.TYPE
         s=s./max(s).*sig.A;
         inv=ilog_SS(sig.L).';
         inv=inv./max(inv).*sig.A;
+    case 'BPLogSS'
+        [s,inv]=BP_log_SS(sig.L,sig.fmin,sig.fmax,FS);
+        s=s.'./max(s.').*sig.A;
+        inv=inv.'./max(inv.').*sig.A;
     otherwise
         warning('Unknown signal type: %s. Default TSP signal is used.\n',sig.TYPE);
         s=up_TSP(sig.L).';

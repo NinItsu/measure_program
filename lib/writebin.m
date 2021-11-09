@@ -1,4 +1,4 @@
-function count = writebin(data, filename, precision);
+function count = writebin(data, filename, precision)
 % "Binary data download" by S.S.
 %  count = writebin(data, filename, precision);
 %
