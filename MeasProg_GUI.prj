@@ -1,0 +1,191 @@
+<deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
+  <configuration build-checksum="1824351782" file="Q:\MATLAB\measure_program\APP\MeasProg_GUI.prj" location="Q:\MATLAB\measure_program\APP" name="MeasProg_GUI" preferred-package-location="Q:\MATLAB\measure_program\MeasProg_GUI\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="アプリケーション コンパイラ">
+    <param.appname>MeasProg_GUI</param.appname>
+    <param.icon>${PROJECT_ROOT}\MeasProg_GUI_resources\icon.ico</param.icon>
+    <param.icons>
+      <file>${PROJECT_ROOT}\MeasProg_GUI_resources\icon_48.png</file>
+      <file>${PROJECT_ROOT}\MeasProg_GUI_resources\icon_32.png</file>
+      <file>${PROJECT_ROOT}\MeasProg_GUI_resources\icon_24.png</file>
+      <file>${PROJECT_ROOT}\MeasProg_GUI_resources\icon_16.png</file>
+    </param.icons>
+    <param.version>1.0</param.version>
+    <param.authnamewatermark>Hanelab</param.authnamewatermark>
+    <param.email />
+    <param.company />
+    <param.summary />
+    <param.description />
+    <param.screenshot>C:\Users\Nin\Pictures\IMG_0967.JPEG</param.screenshot>
+    <param.guid />
+    <param.installpath.string>\MeasProg_GUI\</param.installpath.string>
+    <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
+    <param.logo />
+    <param.install.notes />
+    <param.target.install.notes />
+    <param.intermediate>${PROJECT_ROOT}\MeasProg_GUI\for_testing</param.intermediate>
+    <param.files.only>${PROJECT_ROOT}\MeasProg_GUI\for_redistribution_files_only</param.files.only>
+    <param.output>${PROJECT_ROOT}\MeasProg_GUI\for_redistribution</param.output>
+    <param.logdir>${PROJECT_ROOT}\MeasProg_GUI</param.logdir>
+    <param.enable.clean.build>false</param.enable.clean.build>
+    <param.user.defined.mcr.options />
+    <param.target.type>subtarget.standalone</param.target.type>
+    <param.support.packages />
+    <param.web.mcr>true</param.web.mcr>
+    <param.package.mcr>false</param.package.mcr>
+    <param.no.mcr>false</param.no.mcr>
+    <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
+    <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
+    <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
+    <param.windows.command.prompt>true</param.windows.command.prompt>
+    <param.create.log>false</param.create.log>
+    <param.log.file />
+    <param.native.matlab>false</param.native.matlab>
+    <param.checkbox>false</param.checkbox>
+    <param.example />
+    <param.help.text>Syntax 
+	 MeasProg_GUI -? 
+	 MeasProg_GUI varargin 
+ Input Arguments 
+	 -?  print help on how to use the application 
+	 varargin  input arguments</param.help.text>
+    <unset>
+      <param.version />
+      <param.email />
+      <param.company />
+      <param.summary />
+      <param.description />
+      <param.guid />
+      <param.installpath.string />
+      <param.installpath.combo />
+      <param.logo />
+      <param.install.notes />
+      <param.target.install.notes />
+      <param.intermediate />
+      <param.files.only />
+      <param.output />
+      <param.logdir />
+      <param.enable.clean.build />
+      <param.user.defined.mcr.options />
+      <param.target.type />
+      <param.support.packages />
+      <param.web.mcr />
+      <param.package.mcr />
+      <param.no.mcr />
+      <param.web.mcr.name />
+      <param.package.mcr.name />
+      <param.no.mcr.name />
+      <param.windows.command.prompt />
+      <param.create.log />
+      <param.log.file />
+      <param.native.matlab />
+      <param.checkbox />
+      <param.example />
+    </unset>
+    <fileset.main>
+      <file>Q:\MATLAB\measure_program\MeasProg_GUI.m</file>
+    </fileset.main>
+    <fileset.resources />
+    <fileset.package />
+    <fileset.depfun>
+      <file>Q:\MATLAB\lib\CONV.m</file>
+      <file>Q:\MATLAB\lib\doPlayrec.m</file>
+      <file>Q:\MATLAB\lib\initPlayrec.m</file>
+      <file>Q:\MATLAB\lib\writebin.m</file>
+      <file>Q:\MATLAB\lib_actuator\ACT_MOVE.m</file>
+      <file>Q:\MATLAB\lib_actuator\ACT_RETURN.m</file>
+      <file>Q:\MATLAB\lib_actuator\actuatorCKS.m</file>
+      <file>Q:\MATLAB\lib_actuator\actuatorConnect.m</file>
+      <file>Q:\MATLAB\lib_actuator\actuatorDisconnect.m</file>
+      <file>Q:\MATLAB\lib_actuator\actuatorGet.m</file>
+      <file>Q:\MATLAB\lib_actuator\actuatorMove.m</file>
+      <file>Q:\MATLAB\lib_actuator\actuatorPosition.m</file>
+      <file>Q:\MATLAB\lib_actuator\actuatorPut.m</file>
+      <file>Q:\MATLAB\lib_actuator\actuatorReturn.m</file>
+      <file>Q:\MATLAB\lib_actuator\actuatorServoOFF.m</file>
+      <file>Q:\MATLAB\lib_actuator\actuatorServoON.m</file>
+      <file>Q:\MATLAB\lib_actuator\actuatorTestcall.m</file>
+      <file>Q:\MATLAB\measure_program\BP_log_SS.m</file>
+      <file>Q:\MATLAB\measure_program\check_device_ID.m</file>
+      <file>Q:\MATLAB\measure_program\down_TSP.m</file>
+      <file>Q:\MATLAB\measure_program\getIndices.m</file>
+      <file>Q:\MATLAB\measure_program\ilog_SS.m</file>
+      <file>Q:\MATLAB\measure_program\log_SS.m</file>
+      <file>Q:\MATLAB\measure_program\meas_sig_gen.m</file>
+      <file>Q:\MATLAB\measure_program\MeasProg_actuator.m</file>
+      <file>Q:\MATLAB\measure_program\MeasProg_GUI.fig</file>
+      <file>Q:\MATLAB\measure_program\MeasProg_GUI_actuator.fig</file>
+      <file>Q:\MATLAB\measure_program\MeasProg_GUI_actuator.m</file>
+      <file>Q:\MATLAB\measure_program\MeasProg_GUI_static.fig</file>
+      <file>Q:\MATLAB\measure_program\MeasProg_GUI_static.m</file>
+      <file>Q:\MATLAB\measure_program\MeasProg_GUI_turntable.fig</file>
+      <file>Q:\MATLAB\measure_program\MeasProg_GUI_turntable.m</file>
+      <file>Q:\MATLAB\measure_program\MeasProg_static.m</file>
+      <file>Q:\MATLAB\measure_program\MeasProg_turntable.m</file>
+      <file>Q:\MATLAB\measure_program\PreMeas.m</file>
+      <file>Q:\MATLAB\measure_program\PreMeas_GUI.fig</file>
+      <file>Q:\MATLAB\measure_program\PreMeas_GUI.m</file>
+      <file>Q:\MATLAB\measure_program\RAW2IR.m</file>
+      <file>Q:\MATLAB\measure_program\show_progress.m</file>
+      <file>Q:\MATLAB\measure_program\show_warning.m</file>
+      <file>Q:\MATLAB\measure_program\up_TSP.m</file>
+      <file>Q:\MATLAB\playrec_2_1_0\playrec\m_files\playrec.mexw64</file>
+      <file>Q:\MATLAB\playrec_scripts\is_octave.m</file>
+      <file>Q:\MATLAB\playrec_scripts\select_play_device.m</file>
+    </fileset.depfun>
+    <build-deliverables>
+      <file location="${PROJECT_ROOT}\MeasProg_GUI\for_testing" name="splash.png" optional="false">Q:\MATLAB\measure_program\APP\MeasProg_GUI\for_testing\splash.png</file>
+      <file location="${PROJECT_ROOT}\MeasProg_GUI\for_testing" name="MeasProg_GUI.exe" optional="false">Q:\MATLAB\measure_program\APP\MeasProg_GUI\for_testing\MeasProg_GUI.exe</file>
+      <file location="${PROJECT_ROOT}\MeasProg_GUI\for_testing" name="readme.txt" optional="true">Q:\MATLAB\measure_program\APP\MeasProg_GUI\for_testing\readme.txt</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>D:\MATLAB\R2020b</root>
+      <toolboxes>
+        <toolbox name="matlabcoder" />
+        <toolbox name="embeddedcoder" />
+        <toolbox name="fixedpoint" />
+        <toolbox name="matlabhdlcoder" />
+        <toolbox name="neuralnetwork" />
+      </toolboxes>
+      <toolbox>
+        <matlabcoder>
+          <enabled>true</enabled>
+        </matlabcoder>
+      </toolbox>
+      <toolbox>
+        <embeddedcoder>
+          <enabled>true</enabled>
+        </embeddedcoder>
+      </toolbox>
+      <toolbox>
+        <fixedpoint>
+          <enabled>true</enabled>
+        </fixedpoint>
+      </toolbox>
+      <toolbox>
+        <matlabhdlcoder>
+          <enabled>true</enabled>
+        </matlabhdlcoder>
+      </toolbox>
+      <toolbox>
+        <neuralnetwork>
+          <enabled>true</enabled>
+        </neuralnetwork>
+      </toolbox>
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>10.0</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>

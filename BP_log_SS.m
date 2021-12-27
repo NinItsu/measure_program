@@ -24,6 +24,6 @@ inv=real(ifft(inv));
 s = circshift(s,[0,(N-J)/2]); 
 inv = circshift(inv,[0,-(N-J)/2]); 
 
-s = bandpass(s,[fmin fmax],FS,'ImpulseResponse','fir');
-inv = bandpass(inv,[fmin fmax],FS,'ImpulseResponse','fir');
+s = bandpass(s,[fmin fmax],FS,'ImpulseResponse','auto');
+inv = bandpass(inv,[fmin fmax],FS,'ImpulseResponse','auto');
 end
