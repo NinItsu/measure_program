@@ -16,7 +16,7 @@ elseif nargin==3
             sz.v=size(v);
             mem=prod([sz.u(1)+sz.v(1) sz.u(2:end)]);
             if mem>=1e8
-                warning('Matrix too large, VECTOR mode will be used.\n');
+                warning('Matrix too large, VECTOR mode will be used.');
                 w=CONV(u,v,'VECTOR');
                 return;
             end
@@ -99,7 +99,7 @@ elseif nargin==3
             w=reshape(w,[sz.v(1)+sz.u(1) sz.u(2:end)]);
             w=circshift(w,-sz.v(1),1);
         otherwise
-            warning('Unknown mode, MATRIX mode will be used.\n');
+            warning('Unknown mode, MATRIX mode will be used.');
             w=CONV(u,v,'MATRIX');
     end
 else
