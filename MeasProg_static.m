@@ -8,7 +8,7 @@ function [imp] = MeasProg_static(varargin)
 if nargin == 1
     if isstruct(varargin{1})
     FS=varargin{1}.FS;DEVICE_ID=varargin{1}.DEVICE_ID;DLY=varargin{1}.DLY;
-    NO_LSP=varargin{1}.NO_LSP;NO_MIC=varargin{1}.NO_MIC;TRIAL=varargin{1}.TRIAL;
+    NO_LSP=varargin{1}.set_LSP;NO_MIC=varargin{1}.set_MIC;TRIAL=varargin{1}.TRIAL;
     WARM_UP=varargin{1}.WARM_UP;imp=varargin{1}.imp;sig=varargin{1}.sig;
     meas_name=varargin{1}.meas_name;file_dir=varargin{1}.file_dir;SAVE_RAW=varargin{1}.SAVE_RAW;
     GUI=true;
@@ -234,16 +234,16 @@ for idx_LSP = 1:NO_LSP
         for file_idx=1:file_num;
             delete(saved_file{file_idx});
         end
-        if length(dir('BGN'))==2
-            rmdir('BGN');
+        if length(dir(strcat(file_dir,'BGN')))==2
+            rmdir(strcat(file_dir,'BGN'));
         end
         if SAVE_RAW
         if length(dir(strcat(file_dir,'RAW',date)))==2
             rmdir(strcat(file_dir,'RAW',date));
         end
         end
-        if length(dir('IR'))==2
-            rmdir('IR');
+        if length(dir(strcat(file_dir,'IR')))==2
+            rmdir(strcat(file_dir,'IR'));
         end
         return;
     end

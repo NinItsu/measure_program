@@ -177,7 +177,7 @@ tab4=uitab(tg,'Title','Spectrogram');
 tab_axes = axes('parent', tab4);
 [imp_spec,spec_f,spec_t,spec_ps]=spectrogram(imp.full,hamming(64),32,256,FS,'yaxis');
 log_ps = 10*log10(spec_ps);
-surf(tab_axes,spec_t(1:4:end),spec_f/1000,log_ps(:,1:4:end));
+surf(tab_axes,spec_t(1:8:end),spec_f/1000,log_ps(:,1:8:end));
 tab_axes.View=[0 90];
 shading(tab_axes,'interp');
 caxis(tab_axes,[max(log_ps,[],'all')-30,max(log_ps,[],'all')]);

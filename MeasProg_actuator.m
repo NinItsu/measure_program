@@ -8,7 +8,7 @@ function [imp] = MeasProg_actuator(varargin)
 if nargin == 1
     if isstruct(varargin{1})
     FS=varargin{1}.FS;DEVICE_ID=varargin{1}.DEVICE_ID;DLY=varargin{1}.DLY;
-    NO_LSP=varargin{1}.NO_LSP;NO_MIC=varargin{1}.NO_MIC;TRIAL=varargin{1}.TRIAL;
+    NO_LSP=varargin{1}.set_LSP;NO_MIC=varargin{1}.set_MIC;TRIAL=varargin{1}.TRIAL;
     WARM_UP=varargin{1}.WARM_UP;act=varargin{1}.act;imp=varargin{1}.imp;sig=varargin{1}.sig;
     meas_name=varargin{1}.meas_name;file_dir=varargin{1}.file_dir;SAVE_RAW=varargin{1}.SAVE_RAW;
     GUI=true;
@@ -33,15 +33,9 @@ end
 act.MIN_X=input('X axis starts from (in cm, 0 to 100): ');
 act.MAX_X=input('X axis ends to (in cm, 0 to 100): ');
 act.INR_X=input('X axis interval (in cm, 0 for static): ');
-if act.INR_X==0
-    act.INR_X=1;
-end
 act.MIN_Z=input('Z axis starts from (in cm, 0 to 50): ');
 act.MAX_Z=input('Z axis ends to (in cm, 0 to 50): ');
 act.INR_Z=input('Z axis interval (in cm, 0 for static): ');
-if act.INR_Z==0
-    act.INR_Z=1;
-end
 imp.L=input('Length of the IR: ');
 sig.TYPE=input('Signal type (TSP=UPTSP/DWTSP/LogSS/BPLogSS) : ','s');
 if (strcmp(sig.TYPE,'BPLogSS'))
@@ -58,6 +52,12 @@ meas_name=input('Measure name: ','s');
 file_dir='';
 SAVE_RAW=false;
 GUI=false;
+end
+if act.INR_X==0
+    act.INR_X=1;
+end
+if act.INR_Z==0
+    act.INR_Z=1;
 end
 sig.L=sig.t*FS;
 [sig.s sig.inv]=meas_sig_gen(sig,FS);
@@ -284,16 +284,16 @@ for z_pos = act.MIN_Z:act.INR_Z:act.MAX_Z
         for file_idx=1:file_num;
             delete(saved_file{file_idx});
         end
-        if length(dir('BGN'))==2
-            rmdir('BGN');
+        if length(dir(strcat(file_dir,'BGN')))==2
+            rmdir(strcat(file_dir,'BGN'));
         end
         if SAVE_RAW
         if length(dir(strcat(file_dir,'RAW',date)))==2
             rmdir(strcat(file_dir,'RAW',date));
         end
         end
-        if length(dir('IR'))==2
-            rmdir('IR');
+        if length(dir(strcat(file_dir,'IR')))==2
+            rmdir(strcat(file_dir,'IR'));
         end
         return;
         return;
