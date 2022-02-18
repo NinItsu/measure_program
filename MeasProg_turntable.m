@@ -5,6 +5,8 @@ function [imp] = MeasProg_turntable(varargin)
 %           NOTE: SNR/SDR calculation, time/size/memory estimation TO BE
 %           UPDATED.
 %           by Nin
+%2022/02/18 Fixed: Bug on single channel index.
+%           by Nin
 %初期設定
 if nargin == 1
     if isstruct(varargin{1})
@@ -14,6 +16,10 @@ if nargin == 1
     meas_name=varargin{1}.meas_name;file_dir=varargin{1}.file_dir;SAVE_RAW=varargin{1}.SAVE_RAW;
     GUI=true;
     end
+    set_LSP=NO_LSP;
+    NO_LSP=length(set_LSP);
+    set_MIC=NO_MIC;
+    NO_MIC=length(set_MIC);
 end
 if nargin ~= 1 || ( nargin == 1 && ~isstruct(varargin{1}))
 FS=input('Sampling frequency: ');
@@ -50,24 +56,14 @@ meas_name=input('Measure name: ','s');
 file_dir='';
 SAVE_RAW=true;
 GUI=false;
+set_LSP=[1:NO_LSP];
+set_MIC=[1:NO_MIC];
 end
 if rot.INR==0
     rot.INR=1;
 end
 sig.L=sig.t*FS;
 [sig.s sig.inv]=meas_sig_gen(sig,FS);
-if length(NO_LSP)==1
-    set_LSP=[1:NO_LSP];
-else
-    set_LSP=NO_LSP;
-    NO_LSP=length(set_LSP);
-end
-if length(NO_MIC)==1
-    set_MIC=[1:NO_MIC];
-else
-    set_MIC=NO_MIC;
-    NO_MIC=length(set_MIC);
-end
 %測定用信号の確認
 %figure; plot(sig.s);
 %figure; plot([0:sig.L-1],sig.s);

@@ -5,6 +5,8 @@ function [imp] = MeasProg_actuator(varargin)
 %           by Nin
 %2021/11/02 Updated: Bandpass Log SS, log file.
 %           by Nin
+%2022/02/18 Fixed: Bug on single channel index.
+%           by Nin
 if nargin == 1
     if isstruct(varargin{1})
     FS=varargin{1}.FS;DEVICE_ID=varargin{1}.DEVICE_ID;DLY=varargin{1}.DLY;
@@ -13,6 +15,10 @@ if nargin == 1
     meas_name=varargin{1}.meas_name;file_dir=varargin{1}.file_dir;SAVE_RAW=varargin{1}.SAVE_RAW;
     GUI=true;
     end
+    set_LSP=NO_LSP;
+    NO_LSP=length(set_LSP);
+    set_MIC=NO_MIC;
+    NO_MIC=length(set_MIC);
 end
 if nargin ~= 1 || ( nargin == 1 && ~isstruct(varargin{1}))
 FS=input('Sampling frequency: ');
@@ -52,6 +58,8 @@ meas_name=input('Measure name: ','s');
 file_dir='';
 SAVE_RAW=false;
 GUI=false;
+set_LSP=[1:NO_LSP];
+set_MIC=[1:NO_MIC];
 end
 if act.INR_X==0
     act.INR_X=1;
@@ -61,18 +69,7 @@ if act.INR_Z==0
 end
 sig.L=sig.t*FS;
 [sig.s sig.inv]=meas_sig_gen(sig,FS);
-if length(NO_LSP)==1
-    set_LSP=[1:NO_LSP];
-else
-    set_LSP=NO_LSP;
-    NO_LSP=length(set_LSP);
-end
-if length(NO_MIC)==1
-    set_MIC=[1:NO_MIC];
-else
-    set_MIC=NO_MIC;
-    NO_MIC=length(set_MIC);
-end
+
 %測定用信号の確認
 %figure; plot(sig.s);
 %figure; plot([0:sig.L-1],sig.s);
